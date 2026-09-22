@@ -70,6 +70,10 @@
         <button class="ok-btn" onclick="closePopup()">Save & Next Spin!</button>
     </div>
 
+    <!-- Background Audio Engine Elements -->
+    <audio id="spinSound" src="https://orangefreesounds.com/wp-content/uploads/2025/11/Prize-wheel-spin-sound-effect.mp3" preload="auto" loop></audio>
+    <audio id="winSound" src="https://google.com" preload="auto"></audio>
+
     <script>
         const segments = [
             { label: "S$888", name: "S\$888 Grand Jackpot!", weight: 0.5 },
@@ -87,6 +91,7 @@
         const festiveGreetings = ["Huat Ah! 🧧", "Gong Xi Fa Cai! 🍊", "Xin Nian Kuai Le! 🎉", "Wan Shi Ru Yi! ✨", "Shen Ti Jian Kang! 💪"];
         const sliceColors = ["#ff1a1a", "#d60000", "#ff3333", "#b30000", "#ff4d4d", "#cc0000", "#ff1a1a", "#d60000", "#ff3333", "#b30000"];
         const canvas = document.getElementById("wheel"); const ctx = canvas.getContext("2d"); const spinBtn = document.getElementById("spinBtn");
+        const spinAudio = document.getElementById("spinSound"); const winAudio = document.getElementById("winSound");
         const numSegments = segments.length; const segmentAngle = (2 * Math.PI) / numSegments;
         let currentRotation = 0; let lastWonPrizeName = "";
 
@@ -105,6 +110,11 @@
 
         function spinWheel() {
             spinBtn.disabled = true;
+            
+            // Trigger looping spin sound instantly on user click
+            spinAudio.currentTime = 0;
+            spinAudio.play().catch(e => console.log("Audio unlock required"));
+
             const totalWeight = segments.reduce((sum, seg) => sum + seg.weight, 0);
             const randomPick = Math.random() * totalWeight;
             let cumulativeWeight = 0; let winningIndex = 0;
@@ -115,9 +125,15 @@
             const sliceSizeDeg = 360 / numSegments; const startAngleDeg = winningIndex * sliceSizeDeg;
             const randomTargetInSlice = startAngleDeg + 4 + (Math.random() * (sliceSizeDeg - 8));
             const targetStopDegrees = (270 - randomTargetInSlice + 360) % 360;
-            currentRotation += 1800 + targetStopDegrees - (currentRotation % 360);
+                        currentRotation += 1800 + targetStopDegrees - (currentRotation % 360);
             canvas.style.transform = `rotate(${currentRotation}deg)`;
+            
             setTimeout(() => {
+                // Kill spinning ticking noise and play victory cheering track
+                spinAudio.pause();
+                winAudio.currentTime = 0;
+                winAudio.play().catch(e => console.log("Audio play blocked"));
+
                 const randomGreeting = festiveGreetings[Math.floor(Math.random() * festiveGreetings.length)];
                 lastWonPrizeName = segments[winningIndex].name;
                 document.getElementById("greetingText").innerText = randomGreeting;
@@ -128,20 +144,22 @@
         }
 
         function closePopup() {
+            // Cut celebratory sound loop off once proceeding to next spin
+            winAudio.pause();
+            
             const nameInput = document.getElementById("winnerName").value.trim();
             const displayName = nameInput ? nameInput : "Anonymous Nephew";
             const trackerList = document.getElementById("trackerList");
             const emptyLog = trackerList.querySelector(".empty-log");
             if (emptyLog) emptyLog.remove();
-            const li = document.createElement("li"); 
-            li.className = "tracker-item";
+            const li = document.createElement("li"); li.className = "tracker-item";
             li.innerHTML = '<span>👤 ' + displayName + '</span> <span style="color: #ffd700;">' + lastWonPrizeName + '</span>';
             trackerList.appendChild(li);
             trackerList.scrollTop = trackerList.scrollHeight;
-            document.getElementById("popup").style.display = "none"; 
-            spinBtn.disabled = false;
+            document.getElementById("popup").style.display = "none"; spinBtn.disabled = false;
         }
         drawWheel();
     </script>
 </body>
 </html>
+
