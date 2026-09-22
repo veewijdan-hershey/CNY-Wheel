@@ -70,10 +70,6 @@
         <button class="ok-btn" onclick="closePopup()">Save & Next Spin!</button>
     </div>
 
-    <!-- Google Public Infrastructure Verified Sound Directory Links -->
-    <audio id="spinSound" src="https://google.com" preload="auto" loop></audio>
-    <audio id="winSound" src="https://google.com" preload="auto"></audio>
-
     <script>
         const segments = [
             { label: "S$888", name: "S\$888 Grand Jackpot!", weight: 0.5 },
@@ -91,16 +87,58 @@
         const festiveGreetings = ["Huat Ah! 🧧", "Gong Xi Fa Cai! 🍊", "Xin Nian Kuai Le! 🎉", "Wan Shi Ru Yi! ✨", "Shen Ti Jian Kang! 💪"];
         const sliceColors = ["#ff1a1a", "#d60000", "#ff3333", "#b30000", "#ff4d4d", "#cc0000", "#ff1a1a", "#d60000", "#ff3333", "#b30000"];
         const canvas = document.getElementById("wheel"); const ctx = canvas.getContext("2d"); const spinBtn = document.getElementById("spinBtn");
-        const spinAudio = document.getElementById("spinSound"); const winAudio = document.getElementById("winSound");
         const numSegments = segments.length; const segmentAngle = (2 * Math.PI) / numSegments;
         let currentRotation = 0; let lastWonPrizeName = "";
+
+        // FORCED BROWSER HARDWARE AUDIO ENGINE UNLOCK
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTick() {
+            initAudio();
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(350, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.04);
+            gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.04);
+        }
+
+        function playWinFanfare() {
+            initAudio();
+            if (!audioCtx) return;
+            // Upbeat chord progression: C5 -> E5 -> G5 -> C6
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, idx) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + (idx * 0.1));
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime + (idx * 0.1));
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (idx * 0.1) + 0.5);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(audioCtx.currentTime + (idx * 0.1));
+                osc.stop(audioCtx.currentTime + (idx * 0.1) + 0.5);
+            });
+        }
 
         function drawWheel() {
             const centerX = canvas.width / 2; const centerY = canvas.height / 2; const radius = centerX;
             for (let i = 0; i < numSegments; i++) {
                 const angle = i * segmentAngle;
                 ctx.beginPath(); ctx.fillStyle = sliceColors[i % sliceColors.length]; ctx.moveTo(centerX, centerY);
-                ctx.arc(centerX, centerY, radius, angle, angle + segmentAngle); ctx.lineTo(centerX, centerY); ctx.fill();
+                                ctx.arc(centerX, centerY, radius, angle, angle + segmentAngle); ctx.lineTo(centerX, centerY); ctx.fill();
                 ctx.strokeStyle = "#ffd700"; ctx.lineWidth = 3; ctx.stroke();
                 ctx.save(); ctx.translate(centerX, centerY); ctx.rotate(angle + segmentAngle / 2);
                 ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillStyle = "#ffd700"; ctx.font = "bold 13px Arial";
@@ -110,9 +148,14 @@
 
         function spinWheel() {
             spinBtn.disabled = true;
-            
-            spinAudio.currentTime = 0;
-            spinAudio.play().catch(e => console.log("Unlocked audio"));
+            initAudio(); // Wake up the browser audio engine on click
+
+            let tickCount = 0;
+            const tickerInterval = setInterval(() => {
+                playTick();
+                tickCount++;
+                if (tickCount > 38) clearInterval(tickerInterval);
+            }, 110);
 
             const totalWeight = segments.reduce((sum, seg) => sum + seg.weight, 0);
             const randomPick = Math.random() * totalWeight;
@@ -124,12 +167,12 @@
             const sliceSizeDeg = 360 / numSegments; const startAngleDeg = winningIndex * sliceSizeDeg;
             const randomTargetInSlice = startAngleDeg + 4 + (Math.random() * (sliceSizeDeg - 8));
             const targetStopDegrees = (270 - randomTargetInSlice + 360) % 360;
-                        currentRotation += 1800 + targetStopDegrees - (currentRotation % 360);
-                        canvas.style.transform = `rotate(${currentRotation}deg)`;
+            currentRotation += 1800 + targetStopDegrees - (currentRotation % 360);
+            canvas.style.transform = `rotate(${currentRotation}deg)`;
             
             setTimeout(() => {
                 clearInterval(tickerInterval);
-                playWinFanfare(); // Play digital victory chime chord sequence
+                playWinFanfare(); // Play victory chime
 
                 const randomGreeting = festiveGreetings[Math.floor(Math.random() * festiveGreetings.length)];
                 lastWonPrizeName = segments[winningIndex].name;
@@ -157,4 +200,3 @@
 </body>
 </html>
 
-            
