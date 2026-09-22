@@ -86,7 +86,7 @@
             box-shadow: none;
         }
 
-        .legend-container {
+        .legend-container, .tracker-container {
             background-color: rgba(0, 0, 0, 0.4);
             border: 3px solid #ffd700;
             border-radius: 15px;
@@ -95,9 +95,10 @@
             max-width: 500px;
             box-sizing: border-box;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
         }
 
-        .legend-title {
+        .legend-title, .tracker-title {
             color: #ffd700;
             text-align: center;
             margin-top: 0;
@@ -132,6 +133,34 @@
             color: #fff;
         }
 
+        /* Tracker styling */
+        .tracker-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .tracker-item {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .tracker-item:last-child {
+            border-bottom: none;
+        }
+
+        .empty-log {
+            text-align: center;
+            color: #aaa;
+            font-style: italic;
+        }
+
         .popup {
             display: none;
             position: fixed;
@@ -162,8 +191,18 @@
             line-height: 1.4;
         }
 
+        .name-input {
+            padding: 10px;
+            width: 80%;
+            font-size: 16px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
         .popup .ok-btn {
-            margin-top: 15px;
+            margin-top: 5px;
             padding: 12px 35px;
             font-size: 18px;
             font-weight: bold;
@@ -191,6 +230,14 @@
 
     <button id="spinBtn" class="spin-btn" onclick="spinWheel()">SPIN!</button>
 
+    <!-- Tracker History Log Box -->
+    <div class="tracker-container">
+        <div class="tracker-title">📜 WINNER HISTORY LOG 📜</div>
+        <ul id="trackerList" class="tracker-list">
+            <li class="empty-log">No spins yet. Let the games begin!</li>
+        </ul>
+    </div>
+
     <div class="legend-container">
         <div class="legend-title">🎁 PRIZE LEGEND KEY 🎁</div>
         <div class="legend-grid">
@@ -205,11 +252,16 @@
         </div>
     </div>
 
+    <!-- Announcement Popup -->
     <div id="popup" class="popup">
         <h2 id="greetingText">Huat Ah! 🧧</h2>
         <p style="font-size: 16px; color: #666; margin-bottom: 5px;">You won:</p>
-        <p id="prizeText" style="font-size: 22px; font-weight: bold; color: #333; margin-top: 0;"></p>
-        <button class="ok-btn" onclick="closePopup()">Awesome!</button>
+        <p id="prizeText" style="font-size: 22px; font-weight: bold; color: #333; margin-top: 0; margin-bottom: 15px;"></p>
+        
+        <p style="font-size: 14px; margin-bottom: 5px; font-weight: bold;">Enter Winner's Name to Log History:</p>
+        <input type="text" id="winnerName" class="name-input" placeholder="e.g. Kaiden, Ryan, Ethan" autocomplete="off">
+        <br>
+        <button class="ok-btn" onclick="closePopup()">Save & Next Spin!</button>
     </div>
 
     <script>
@@ -243,87 +295,6 @@
         const segmentAngle = (2 * Math.PI) / numSegments;
         
         let currentRotation = 0;
+        let lastWonPrizeName = ""; // Temporary storage for logging
 
         function drawWheel() {
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const radius = centerX;
-
-            for (let i = 0; i < numSegments; i++) {
-                const angle = i * segmentAngle;
-                
-                ctx.beginPath();
-                ctx.fillStyle = sliceColors[i % sliceColors.length];
-                ctx.moveTo(centerX, centerY);
-                ctx.arc(centerX, centerY, radius, angle, angle + segmentAngle);
-                ctx.lineTo(centerX, centerY);
-                ctx.fill();
-                
-                ctx.strokeStyle = "#ffd700";
-                ctx.lineWidth = 3;
-                ctx.stroke();
-
-                ctx.save();
-                ctx.translate(centerX, centerY);
-                ctx.rotate(angle + segmentAngle / 2);
-                ctx.textAlign = "right";
-                ctx.textBaseline = "middle";
-                ctx.fillStyle = "#ffd700";
-                ctx.font = "bold 13px Arial";
-                
-                ctx.fillText(segments[i].label, radius * 0.9, 0);
-                ctx.restore();
-            }
-        }
-
-                function spinWheel() {
-            spinBtn.disabled = true;
-
-            const totalWeight = segments.reduce((sum, seg) => sum + seg.weight, 0);
-            const randomPick = Math.random() * totalWeight;
-            
-            let cumulativeWeight = 0;
-            let winningIndex = 0;
-            for (let i = 0; i < numSegments; i++) {
-                cumulativeWeight += segments[i].weight;
-                if (randomPick <= cumulativeWeight) {
-                    winningIndex = i;
-                    break;
-                }
-            }
-
-            // --- FIXED POINTER CALCULATION ---
-            const sliceSizeDeg = 360 / numSegments;
-            const startAngleDeg = winningIndex * sliceSizeDeg;
-            
-            // Random resting target safely inside the chosen segment slice (leaves border buffers)
-            const randomTargetInSlice = startAngleDeg + 3 + (Math.random() * (sliceSizeDeg - 6));
-            
-            // Adjust for the top pointer (270 degrees offset layout)
-            const targetStopDegrees = (270 - randomTargetInSlice + 360) % 360;
-            
-            // Force at least 5 complete spins for suspenseful physics presentation momentum
-            const finalSpinDegrees = 1800 + targetStopDegrees;
-            currentRotation += finalSpinDegrees;
-
-            // Execute fluid rotation CSS animation
-            canvas.style.transform = `rotate(${currentRotation}deg)`;
-
-            // Handle landing events smoothly 4.5 seconds afterwards
-            setTimeout(() => {
-                const randomGreeting = festiveGreetings[Math.floor(Math.random() * festiveGreetings.length)];
-                document.getElementById("greetingText").innerText = randomGreeting;
-                document.getElementById("prizeText").innerText = segments[winningIndex].name;
-                document.getElementById("popup").style.display = "block";
-            }, 4500);
-        }
-
-            document.getElementById("popup").style.display = "none";
-            spinBtn.disabled = false;
-        }
-
-        drawWheel();
-    </script>
-</body>
-</html>
-
