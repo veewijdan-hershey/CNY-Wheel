@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNY Red Packet Spin the Wheel!</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #ff1a1a;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+            margin-bottom: 20px;
+            font-size: 2.2rem;
+            text-align: center;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 340px;
+            height: 340px;
+            margin-bottom: 30px;
+        }
+
+        .pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 18px solid transparent;
+            border-right: 18px solid transparent;
+            border-top: 32px solid #ffd700;
+            z-index: 10;
+            filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.5));
+        }
+
+        canvas {
+            border: 10px solid #ffd700;
+            border-radius: 50%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+            transition: transform 4.5s cubic-bezier(0.1, 0.8, 0.25, 1);
+            background-color: #ffd700;
+        }
+
+        .spin-btn {
+            padding: 15px 50px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff1a1a;
+            background-color: #ffd700;
+            border: 2px solid #fff;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+            transition: 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 30px;
+        }
+
+        .spin-btn:hover {
+            transform: scale(1.05);
+            background-color: #fff4b3;
+        }
+
+        .spin-btn:disabled {
+            background-color: #ccc;
+            border-color: #999;
+            color: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .legend-container {
+            background-color: rgba(0, 0, 0, 0.4);
+            border: 3px solid #ffd700;
+            border-radius: 15px;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .legend-title {
+            color: #ffd700;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            border-bottom: 2px solid #ffd700;
+            padding-bottom: 5px;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .legend-icon {
+            font-size: 1.8rem;
+            margin-right: 15px;
+            width: 40px;
+            text-align: center;
+        }
+
+        .legend-text {
+            color: #fff;
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            color: #333;
+            padding: 35px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+            z-index: 20;
+            border: 6px solid #ffd700;
+            width: 85%;
+            max-width: 400px;
+        }
+
+        .popup h2 {
+            margin-top: 0;
+            color: #ff1a1a;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+
+        .popup p {
+            margin: 15px 0;
+            line-height: 1.4;
+        }
+
+        .popup .ok-btn {
+            margin-top: 15px;
+            padding: 12px 35px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #ff1a1a;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .popup .ok-btn:hover {
+            background-color: #cc0000;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🧧 HUAT AH! RED PACKET WHEEL 🧧</h1>
+
+    <div class="wheel-container">
+        <div class="pointer"></div>
+        <canvas id="wheel" width="340" height="340"></canvas>
+    </div>
+
+    <button id="spinBtn" class="spin-btn" onclick="spinWheel()">SPIN!</button>
+
+    <div class="legend-container">
+        <div class="legend-title">🎁 PRIZE LEGEND KEY 🎁</div>
+        <div class="legend-grid">
+            <div class="legend-item"><span class="legend-icon">💎</span><span class="legend-text">S\$888 Grand Jackpot! (Ultra Rare)</span></div>
+            <div class="legend-item"><span class="legend-icon">🧧</span><span class="legend-text">Lucky SGD Cash (S\$8, S\$28, or S\$88)</span></div>
+            <div class="legend-item"><span class="legend-icon">🍍</span><span class="legend-text">2 pieces of pineapple tarts</span></div>
+            <div class="legend-item"><span class="legend-icon">🥓</span><span class="legend-text">1 extra slice of bak kwa</span></div>
+            <div class="legend-item"><span class="legend-icon">🐱</span><span class="legend-text">One cute Hello Kitty angpow packet</span></div>
+            <div class="legend-item"><span class="legend-icon">👵</span><span class="legend-text">A kiss from your grandma</span></div>
+            <div class="legend-item"><span class="legend-icon">🚗</span><span class="legend-text">Sponsorship for your Grab fare from Yishun to home</span></div>
+            <div class="legend-item"><span class="legend-icon">🍪</span><span class="legend-text">100g of Famous Amos cookies of your choice</span></div>
+        </div>
+    </div>
+
+    <div id="popup" class="popup">
+        <h2 id="greetingText">Huat Ah! 🧧</h2>
+        <p style="font-size: 16px; color: #666; margin-bottom: 5px;">You won:</p>
+        <p id="prizeText" style="font-size: 22px; font-weight: bold; color: #333; margin-top: 0;"></p>
+        <button class="ok-btn" onclick="closePopup()">Awesome!</button>
+    </div>
+
+    <script>
+        const segments = [
+            { label: "S$888", name: "S\$888 Grand Jackpot!", weight: 0.5 },
+            { label: "S$88", name: "S\$88 Cash Angpow!", weight: 12 },
+            { label: "S$28", name: "S\$28 Cash Angpow!", weight: 12 },
+            { label: "S$8", name: "S\$8 Cash Angpow!", weight: 12 },
+            { label: "TARTS", name: "2 pieces of pineapple tarts 🍍", weight: 11 },
+            { label: "BAK KWA", name: "1 extra slice of bak kwa 🥓", weight: 11 },
+            { label: "KITTY", name: "One cute Hello Kitty angpow packet 🐱", weight: 11 },
+            { label: "KISS", name: "A kiss from your grandma 👵", weight: 11 },
+            { label: "GRAB", name: "Sponsorship for your Grab fare from Yishun to home 🚗", weight: 11 },
+            { label: "COOKIES", name: "100g of Famous Amos cookies of your choice 🍪", weight: 11 }
+        ];
+
+        const festiveGreetings = [
+            "Huat Ah! 🧧",
+            "Gong Xi Fa Cai! 🍊",
+            "Xin Nian Kuai Le! 🎉",
+            "Wan Shi Ru Yi! ✨",
+            "Shen Ti Jian Kang! 💪"
+        ];
+
+        const sliceColors = ["#ff1a1a", "#d60000", "#ff3333", "#b30000", "#ff4d4d", "#cc0000", "#ff1a1a", "#d60000", "#ff3333", "#b30000"];
+        
+        const canvas = document.getElementById("wheel");
+        const ctx = canvas.getContext("2d");
+        const spinBtn = document.getElementById("spinBtn");
+        const numSegments = segments.length;
+        const segmentAngle = (2 * Math.PI) / numSegments;
+        
+        let currentRotation = 0;
+
+        function drawWheel() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = centerX;
+
+            for (let i = 0; i < numSegments; i++) {
+                const angle = i * segmentAngle;
+                
+                ctx.beginPath();
+                ctx.fillStyle = sliceColors[i % sliceColors.length];
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, angle, angle + segmentAngle);
+                ctx.lineTo(centerX, centerY);
+                ctx.fill();
+                
+                ctx.strokeStyle = "#ffd700";
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(angle + segmentAngle / 2);
+                ctx.textAlign = "right";
+                ctx.textBaseline = "middle";
+                ctx.fillStyle = "#ffd700";
+                ctx.font = "bold 13px Arial";
+                
+                ctx.fillText(segments[i].label, radius * 0.9, 0);
+                ctx.restore();
+            }
+        }
+
+        function spinWheel() {
+            spinBtn.disabled = true;
+
+            const totalWeight = segments.reduce((sum, seg) => sum + seg.weight, 0);
+            const randomPick = Math.random() * totalWeight;
+            
+            let cumulativeWeight = 0;
+            let winningIndex = 0;
+            for (let i = 0; i < numSegments; i++) {
+                cumulativeWeight += segments[i].weight;
+                if (randomPick <= cumulativeWeight) {
+                    winningIndex = i;
+                    break;
+                }
+            }
+
+            const targetSegmentCenter = winningIndex * segmentAngle + (segmentAngle / 2);
+            const stopAngleInRadians = (2.5 * Math.PI) - targetSegmentCenter;
+            const stopDegrees = (stopAngleInRadians * 180) / Math.PI;
+            
+            const targetedFinalRotation = 2160 + (stopDegrees % 360);
+            currentRotation += targetedFinalRotation - (currentRotation % 360);
+
+            canvas.style.transform = `rotate(${currentRotation}deg)`;
+
+            setTimeout(() => {
+                const randomGreeting = festiveGreetings[Math.floor(Math.random() * festiveGreetings.length)];
+                document.getElementById("greetingText").innerText = randomGreeting;
+                document.getElementById("prizeText").innerText = segments[winningIndex].name;
+                document.getElementById("popup").style.display = "block";
+            }, 4500);
+        }
+
+        function closePopup() {
+            document.getElementById("popup").style.display = "none";
+            spinBtn.disabled = false;
+        }
+
+        drawWheel();
+    </script>
+</body>
+</html>
+
