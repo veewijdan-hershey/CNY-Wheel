@@ -125,13 +125,11 @@
             const randomTargetInSlice = startAngleDeg + 4 + (Math.random() * (sliceSizeDeg - 8));
             const targetStopDegrees = (270 - randomTargetInSlice + 360) % 360;
                         currentRotation += 1800 + targetStopDegrees - (currentRotation % 360);
-            canvas.style.transform = `rotate(${currentRotation}deg)`;
+                        canvas.style.transform = `rotate(${currentRotation}deg)`;
             
             setTimeout(() => {
-                // Kill ticking noise and trigger victory applause track
-                spinAudio.pause();
-                winAudio.currentTime = 0;
-                winAudio.play().catch(e => console.log("Win audio play"));
+                clearInterval(tickerInterval);
+                playWinFanfare(); // Play digital victory chime chord sequence
 
                 const randomGreeting = festiveGreetings[Math.floor(Math.random() * festiveGreetings.length)];
                 lastWonPrizeName = segments[winningIndex].name;
@@ -143,26 +141,20 @@
         }
 
         function closePopup() {
-            // Cut celebratory sound off once proceeding to next spin
-            winAudio.pause();
-            
             const nameInput = document.getElementById("winnerName").value.trim();
             const displayName = nameInput ? nameInput : "Anonymous Nephew";
             const trackerList = document.getElementById("trackerList");
             const emptyLog = trackerList.querySelector(".empty-log");
             if (emptyLog) emptyLog.remove();
-            
-            const li = document.createElement("li"); 
-            li.className = "tracker-item";
+            const li = document.createElement("li"); li.className = "tracker-item";
             li.innerHTML = '<span>👤 ' + displayName + '</span> <span style="color: #ffd700;">' + lastWonPrizeName + '</span>';
             trackerList.appendChild(li);
             trackerList.scrollTop = trackerList.scrollHeight;
-            
-            document.getElementById("popup").style.display = "none"; 
-            spinBtn.disabled = false;
+            document.getElementById("popup").style.display = "none"; spinBtn.disabled = false;
         }
         drawWheel();
     </script>
 </body>
 </html>
 
+            
