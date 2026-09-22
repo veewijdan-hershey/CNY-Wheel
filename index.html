@@ -276,7 +276,7 @@
             }
         }
 
-        function spinWheel() {
+                function spinWheel() {
             spinBtn.disabled = true;
 
             const totalWeight = segments.reduce((sum, seg) => sum + seg.weight, 0);
@@ -292,15 +292,24 @@
                 }
             }
 
-            const targetSegmentCenter = winningIndex * segmentAngle + (segmentAngle / 2);
-            const stopAngleInRadians = (2.5 * Math.PI) - targetSegmentCenter;
-            const stopDegrees = (stopAngleInRadians * 180) / Math.PI;
+            // --- FIXED POINTER CALCULATION ---
+            const sliceSizeDeg = 360 / numSegments;
+            const startAngleDeg = winningIndex * sliceSizeDeg;
             
-            const targetedFinalRotation = 2160 + (stopDegrees % 360);
-            currentRotation += targetedFinalRotation - (currentRotation % 360);
+            // Random resting target safely inside the chosen segment slice (leaves border buffers)
+            const randomTargetInSlice = startAngleDeg + 3 + (Math.random() * (sliceSizeDeg - 6));
+            
+            // Adjust for the top pointer (270 degrees offset layout)
+            const targetStopDegrees = (270 - randomTargetInSlice + 360) % 360;
+            
+            // Force at least 5 complete spins for suspenseful physics presentation momentum
+            const finalSpinDegrees = 1800 + targetStopDegrees;
+            currentRotation += finalSpinDegrees;
 
+            // Execute fluid rotation CSS animation
             canvas.style.transform = `rotate(${currentRotation}deg)`;
 
+            // Handle landing events smoothly 4.5 seconds afterwards
             setTimeout(() => {
                 const randomGreeting = festiveGreetings[Math.floor(Math.random() * festiveGreetings.length)];
                 document.getElementById("greetingText").innerText = randomGreeting;
@@ -309,7 +318,6 @@
             }, 4500);
         }
 
-        function closePopup() {
             document.getElementById("popup").style.display = "none";
             spinBtn.disabled = false;
         }
