@@ -89,26 +89,16 @@
         const canvas = document.getElementById("wheel"); const ctx = canvas.getContext("2d"); const spinBtn = document.getElementById("spinBtn");
         const numSegments = segments.length; const segmentAngle = (2 * Math.PI) / numSegments;
         let currentRotation = 0; let lastWonPrizeName = "";
-
-        // FORCED BROWSER HARDWARE AUDIO ENGINE UNLOCK
+        
         let audioCtx = null;
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }
 
         function playTick() {
-            initAudio();
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'triangle';
-            osc.frequency.setValueAtTime(350, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.04);
+            osc.frequency.setValueAtTime(320, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.04);
             gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
             gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
             osc.connect(gain); gain.connect(audioCtx.destination);
@@ -116,20 +106,18 @@
         }
 
         function playWinFanfare() {
-            initAudio();
             if (!audioCtx) return;
-            // Upbeat chord progression: C5 -> E5 -> G5 -> C6
             const notes = [523.25, 659.25, 783.99, 1046.50];
             notes.forEach((freq, idx) => {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + (idx * 0.1));
-                gain.gain.setValueAtTime(0.15, audioCtx.currentTime + (idx * 0.1));
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (idx * 0.1) + 0.5);
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + (idx * 0.08));
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime + (idx * 0.08));
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (idx * 0.08) + 0.4);
                 osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(audioCtx.currentTime + (idx * 0.1));
-                osc.stop(audioCtx.currentTime + (idx * 0.1) + 0.5);
+                osc.start(audioCtx.currentTime + (idx * 0.08));
+                osc.stop(audioCtx.currentTime + (idx * 0.08) + 0.4);
             });
         }
 
@@ -138,17 +126,24 @@
             for (let i = 0; i < numSegments; i++) {
                 const angle = i * segmentAngle;
                 ctx.beginPath(); ctx.fillStyle = sliceColors[i % sliceColors.length]; ctx.moveTo(centerX, centerY);
-                                ctx.arc(centerX, centerY, radius, angle, angle + segmentAngle); ctx.lineTo(centerX, centerY); ctx.fill();
+                ctx.arc(centerX, centerY, radius, angle, angle + segmentAngle); ctx.lineTo(centerX, centerY); ctx.fill();
                 ctx.strokeStyle = "#ffd700"; ctx.lineWidth = 3; ctx.stroke();
                 ctx.save(); ctx.translate(centerX, centerY); ctx.rotate(angle + segmentAngle / 2);
                 ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillStyle = "#ffd700"; ctx.font = "bold 13px Arial";
-                ctx.fillText(segments[i].label, radius * 0.9, 0); ctx.restore();
+                                ctx.fillText(segments[i].label, radius * 0.9, 0); ctx.restore();
             }
         }
 
         function spinWheel() {
             spinBtn.disabled = true;
-            initAudio(); // Wake up the browser audio engine on click
+
+            // APPLE SAFARI CRITICAL AUDIO UNLOCK
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
 
             let tickCount = 0;
             const tickerInterval = setInterval(() => {
@@ -172,7 +167,7 @@
             
             setTimeout(() => {
                 clearInterval(tickerInterval);
-                playWinFanfare(); // Play victory chime
+                playWinFanfare(); // Play native victory chimes
 
                 const randomGreeting = festiveGreetings[Math.floor(Math.random() * festiveGreetings.length)];
                 lastWonPrizeName = segments[winningIndex].name;
